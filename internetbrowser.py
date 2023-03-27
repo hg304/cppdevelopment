@@ -6,22 +6,17 @@ global window
 window = tk.Tk()
 global history
 history = []
+global urlglo
+urlglo = ""
 
-class BrowserFrame:
+class URL:
     def __init__(self):
-        self.frame = HtmlFrame(window)
-        self.width = window.winfo_screenwidth()
-        self.height = window.winfo_screenheight()
-        window.geometry("%dx%d" % (self.width, self.height))
-        self.loadPageInitial("www.google.com")
-        self.frame.pack(fill="both", expand=True)
+        self.urlwin = tk.Tk()
+        self.urlwin.geometry('660x70+100+70')
+        self.urlwin.title("Enter new URL")
+        self.urlwin.resizable(0, 0)
 
-        self.mymenu = Menu(window)
-        self.options = Menu(self.mymenu)
-        window.config(menu=self.mymenu)
-        self.createMenu()
-
-        self.temp = StringVar()
+        self.temp = StringVar(self.urlwin)
 
         self.qLabel = Label(self.urlwin, text="Query: ", font=('arial', 12))
         self.qLabel.grid(row=0, column=1)
@@ -34,47 +29,79 @@ class BrowserFrame:
 
         self.urlwin.mainloop()
 
-    def createMenu(self):
+    def directToURL(self):
+        urlglo = self.temp.get()
+        bframe.loadPageFromInput(urlglo)
+
+class ObMenu:
+    def __init__(self):
+        self.mymenu = Menu(window)
+        self.options = Menu(self.mymenu)
+        window.config(menu=self.mymenu)
+
         self.mymenu.add_cascade(label="Actions", menu=self.options)
         self.options.add_command(label="Back", command=self.headBack)
+        self.options.add_command(label="Forward", command=self.headForward)
         self.options.add_command(label="Refresh", command=self.refresh)
         self.options.add_command(label="Go to different site", command=self.goToURL)
 
     def refresh(self):
-        BrowserFrame.loadPageInitial()
-
-    def openURL(self):
-        self.urlwin = tk.Tk()
-        self.urlwin.geometry('660x70+100+70')
-        self.urlwin.title("Enter new URL")
-        self.urlwin.resizable(0, 0)
-
-        return self.directToURL()
+        bframe.refreshPage(history[len(history)-1])
 
     def goToURL(self):
-        temp = self.openURL()
-        url = temp.directToURL()
-        return
+        temp = URL()
 
     def headBack(self):
-        self.frame.load_website(f"http://{history[len(history)-1]}")
-        history.pop()
+        bframe.loadPageFromBack(history[len(history)-2])
+        forHist.insert(0, history.pop(len(history)-1))
+
+    def headForward(self):
+        if len(forHist) > 0:
+            url = forHist.pop(0)
+            bframe.loadPageFromInput(url)
+
+class BrowserFrame:
+    def __init__(self):
+        self.mmenu = ObMenu()
+        self.frame = HtmlFrame(window)
+        self.width = window.winfo_screenwidth()
+        self.height = window.winfo_screenheight()
+        window.geometry("%dx%d" % (self.width, self.height))
+        self.loadPageInitial()
+        self.frame.pack(fill="both", expand=True)
+
+    def addToHistory(self, url):
+        history.append(url)
+
+    def refreshPage(self, url):
+        self.frame.load_website(f"http://{url}")
 
     def loadPageFromInput(self, url):
         self.frame.load_website(f"http://{url}")
-        history.append(f"http://{url}")
 
-
-    def loadPageInitial(self, url):
+    def loadPageFromBack(self, url):
         self.frame.load_website(f"http://{url}")
-        history.append(f"http://{url}")
 
-    def directToURL(self):
-        self.urlwin.quit()
-        return self.textBox.get()
+    def loadPageInitial(self):
+        self.frame.load_website(f"http://www.google.com")
+        history.append(f"www.google.com")
+
+
+global bframe
+bframe = BrowserFrame()
+global forHist
+forHist = []
+
+
+def geturl(url):
+    if "http://" in url:
+        url = url.replace("http://", "")
+    bframe.addToHistory(url)
+    bframe.loadPageFromInput(url)
+
+bframe.frame.on_link_click(geturl)
 
 def initialize():
-    bframe = BrowserFrame()
     window.title("Browser")
     window.mainloop()
 
